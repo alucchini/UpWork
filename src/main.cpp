@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Adafruit_Fingerprint.h>
+#include <HardwareSerial.h>
 
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
 // For UNO and others without hardware serial, we must use software serial...
