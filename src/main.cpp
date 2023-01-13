@@ -16,7 +16,7 @@ const char* password = "12345678";
 // Add your MQTT Broker IP address, example:
 const char* mqtt_server = "172.20.10.3";
 const int mqtt_port = 1883;
-const char* mqtt_topic = "upwork/#";
+const char* mqtt_topic = "upwork";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -323,7 +323,7 @@ void loop() {
   StaticJsonDocument<256> doc;
   JsonObject root = doc.to<JsonObject>();
 
-  root["employerId"] = "64340";
+  root["employeeId"] = "64340";
 
   char json[128];
   int b =serializeJson(doc, json);
