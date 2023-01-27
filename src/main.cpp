@@ -6,27 +6,20 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <Wire.h>
+#include <ESP32Ping.h>
+#include <ArduinoJson.h>
 
 // Replace the next variables with your SSID/Password combination
-const char* ssid = "SER@YNOV";
-const char* password = "SteGYdUR227NtpEXT";
+const char* ssid = "iPhone de Louis";
+const char* password = "12345678";
 
 // Add your MQTT Broker IP address, example:
-//const char* mqtt_server = "192.168.1.144";
-const char* mqtt_server = "10.33.10.193";
+const char* mqtt_server = "172.20.10.3";
+const int mqtt_port = 1883;
+const char* mqtt_topic = "upwork/#";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
-long lastMsg = 0;
-char msg[50];
-int value = 0;
-
-//uncomment the following lines if you're using SPI
-/*#include <SPI.h>
-#define BME_SCK 18
-#define BME_MISO 19
-#define BME_MOSI 23
-#define BME_CS 5*/
 
 // LED Pin
 const int ledPin = 4;
@@ -60,14 +53,47 @@ void setup_wifi() {
   Serial.println(WiFi.macAddress());
   Serial.print("Connecting to ");
   Serial.println(ssid);
+// GOOD
+void scan_wifi(){
+  Serial.println("scan start");
 
+  // WiFi.scanNetworks will return the number of networks found
+  int n = WiFi.scanNetworks();
+  Serial.println("scan done");
+  if (n == 0) {
+      Serial.println("no networks found");
+  } else {
+    Serial.print(n);
+    Serial.println(" networks found");
+    for (int i = 0; i < n; ++i) {
+      // Print SSID and RSSI for each network found
+      Serial.print(i + 1);
+      Serial.print(": ");
+      Serial.print(WiFi.SSID(i));
+      Serial.print(" (");
+      Serial.print(WiFi.RSSI(i));
+      Serial.print(")");
+      Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
+      delay(10);
+    }
+  }
+  Serial.println("");
+
+  // Wait a bit before scanning again
+  delay(5000);
+}
+
+// GOOD
+void setup_wifi() {
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
+  wl_status_t wifi_status = WiFi.status();
+  Serial.print("WiFi status: ");
+  Serial.print(wifi_status);
+
   while (WiFi.status() != WL_CONNECTED) {
-    wl_status_t wifi_status = WiFi.status();
-    Serial.print("WiFi status: ");
-    Serial.print(wifi_status);
-    delay(500);
+    delay(1000);
     Serial.print(". ");
   }
 
@@ -76,6 +102,7 @@ void setup_wifi() {
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 }
+
 
 void callback(char* topic, byte* message, unsigned int length) {
   Serial.print("Message arrived on topic: ");
@@ -93,7 +120,7 @@ void callback(char* topic, byte* message, unsigned int length) {
 
   // If a message is received on the topic esp32/output, you check if the message is either "on" or "off". 
   // Changes the output state according to the message
-  if (String(topic) == "esp32/output") {
+  if (String(topic) == mqtt_topic) {
     Serial.print("Changing output to ");
     if(messageTemp == "on"){
       Serial.println("on");
@@ -111,10 +138,10 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect("ESP8266Client")) {
+    if (client.connect("ESP32Upwork")) {
       Serial.println("connected");
       // Subscribe
-      client.subscribe("esp32/output");
+      client.subscribe(mqtt_topic);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -224,11 +251,32 @@ void setup() {
   Serial.begin(115200);
   fingerManager.connect();
 
+  delay(10);
+  scan_wifi();
+  delay(100);
+  Serial.println("Scan done");
+
+  Serial.println();
+
+  Serial.print("ESP Board MAC Address:  ");
+  Serial.println(WiFi.macAddress());
+
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
   setup_wifi();
-  client.setServer(mqtt_server, 1883);
+  Serial.print("RRSI: ");
+  Serial.println(WiFi.RSSI());
+  client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
 
   pinMode(ledPin, OUTPUT);
+
+  if(Ping.ping(mqtt_server)){
+    Serial.println("Ping OK");
+  }else{
+    Serial.println("Ping KO");
+  }
 }
 
 void loop() {
@@ -272,4 +320,18 @@ void loop() {
     Serial.println(id);
     fingerManager.enrollFinger(id, "Test");
   }
+  StaticJsonDocument<256> doc;
+  JsonObject root = doc.to<JsonObject>();
+
+  root["employerId"] = "64340";
+
+  char json[128];
+  int b =serializeJson(doc, json);
+
+  Serial.print("JSON = ");
+  Serial.println(json);
+
+  client.publish(mqtt_topic, json);
+  Serial.println("Empreinte envoyée");
+  delay(10000);
 }
