@@ -199,7 +199,7 @@ Match FingerprintManager::scanFingerprint() {
         match.matchId = finger.fingerID;
         match.matchConfidence = finger.confidence;
         match.matchName = fingerList[finger.fingerID];
-      
+        
     } else if (match.returnCode == FINGERPRINT_PACKETRECIEVEERR) {
         Serial.println("Communication error");
 
@@ -216,7 +216,6 @@ Match FingerprintManager::scanFingerprint() {
   } //while
 
   return match;
-
 }
 
 

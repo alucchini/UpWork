@@ -76,6 +76,7 @@ bool checkPairingValid() {
 void doScan()
 {
   Match match = fingerManager.scanFingerprint();
+  
   switch(match.scanResult)
   {
     case ScanResult::noFinger:
@@ -85,7 +86,7 @@ void doScan()
       }
       break; 
     case ScanResult::matchFound:
-      if (match.scanResult != lastMatch.scanResult) {
+      //if (match.scanResult != lastMatch.scanResult) {
         if (checkPairingValid()) {
           Serial.print("Match Found -> ID: ");
           Serial.print(match.matchId);
@@ -98,7 +99,7 @@ void doScan()
         }
         Serial.println("Match Found!");
         matchFound = true;
-      }
+      //}
       delay(3000); // wait some time before next scan to let the LED blink
       break;
     case ScanResult::noMatchFound:
@@ -130,7 +131,9 @@ void loop() {
   Serial.println("Place finger on sensor");
   Serial.println("----------------------");
 
+  Serial.println(matchFound);
   doScan();
+  Serial.println(matchFound);
 
   // Validate finger
   Serial.println("Remove finger");
