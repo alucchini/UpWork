@@ -10,16 +10,17 @@
 #include <ArduinoJson.h>
 
 // Replace the next variables with your SSID/Password combination
-const char* ssid = "iPhone de Louis";
-const char* password = "12345678";
+const char* ssid = "Galaxy A514A04";
+const char* password = "upwork123";
 
 // Add your MQTT Broker IP address, example:
-const char* mqtt_server = "172.20.10.3";
+const char* mqtt_server = "192.168.65.197";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "upwork";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+long lastMsg = 0;
 
 // LED Pin
 const int ledPin = 4;
@@ -45,14 +46,6 @@ Match lastMatch;
 SettingsManager settingsManager;
 bool matchFound = false;
 
-void setup_wifi() {
-  delay(10);
-  // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.print("ESP Board MAC Address:  ");
-  Serial.println(WiFi.macAddress());
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
 // GOOD
 void scan_wifi(){
   Serial.println("scan start");
@@ -280,6 +273,7 @@ void setup() {
 }
 
 void loop() {
+
   if (!client.connected()) {
     reconnect();
   }
@@ -296,42 +290,43 @@ void loop() {
     // Serial.println(tempString);
     // client.publish("esp32/temperature", tempString);
   }
-  sleep(2);
+  sleep(1);
+
+  finger.LEDcontrol(FINGERPRINT_LED_ON, 0, FINGERPRINT_LED_RED);
 
   Serial.println(" ");
   Serial.println(" ");
   Serial.println("Place finger on sensor");
   Serial.println("----------------------");
 
-  Serial.println(matchFound);
   doScan();
-  Serial.println(matchFound);
 
   // Validate finger
   Serial.println("Remove finger");
   if (matchFound) {
     Serial.println("Finger validated");
     matchFound = false;
+
+    StaticJsonDocument<256> doc;
+    JsonObject root = doc.to<JsonObject>();
+
+    root["employeeId"] = lastMatch.matchId;
+
+    char json[128];
+    int b =serializeJson(doc, json);
+
+    Serial.print("JSON = ");
+    Serial.println(json);
+
+    client.publish(mqtt_topic, json);
+    Serial.println("Empreinte envoyée");
+    sleep(3);
   } else {
     // String newPairingCode = fingerManager.generateNewPairingCode();
     // Serial.println(newPairingCode);
-    id = rand() % 1000; // Generate random ID
+    id = rand(); // Generate random ID
     Serial.print("ID: ");
     Serial.println(id);
     fingerManager.enrollFinger(id, "Test");
   }
-  StaticJsonDocument<256> doc;
-  JsonObject root = doc.to<JsonObject>();
-
-  root["employeeId"] = "64340";
-
-  char json[128];
-  int b =serializeJson(doc, json);
-
-  Serial.print("JSON = ");
-  Serial.println(json);
-
-  client.publish(mqtt_topic, json);
-  Serial.println("Empreinte envoyée");
-  delay(10000);
 }
