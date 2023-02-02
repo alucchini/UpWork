@@ -8,13 +8,17 @@
 #include <Wire.h>
 #include <ESP32Ping.h>
 #include <ArduinoJson.h>
+#include <LiquidCrystal_I2C.h>
+#include <NTPClient.h>
+#include <TimeLib.h>
+
 
 // Replace the next variables with your SSID/Password combination
-const char* ssid = "Galaxy A514A04";
-const char* password = "upwork123";
+const char* ssid = "Airbox_4064";
+const char* password = "";
 
 // Add your MQTT Broker IP address, example:
-const char* mqtt_server = "192.168.65.197";
+const char* mqtt_server = "192.168.1.112";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "upwork";
 
@@ -24,6 +28,20 @@ long lastMsg = 0;
 
 // LED Pin
 const int ledPin = 4;
+
+// LCD variables
+int totalColumns = 16;
+int totalRows = 2;
+
+// LCD i2C configuration
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
+LiquidCrystal_I2C lcd(0x27, totalColumns, totalRows);
+ 
+char Time[ ] = "Temps: 00:00:00";
+char Date[ ] = "Date: 00/00/2000";
+byte last_second, second_, minute_, hour_, day_, month_;
+int year_;
 
 #if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
 // For UNO and others without hardware serial, we must use software serial...
@@ -243,9 +261,12 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   fingerManager.connect();
+  lcd.init(); 
+  lcd.backlight();
 
   delay(10);
   scan_wifi();
+  timeClient.begin(); // use to turn on and turn off LCD back light
   delay(100);
   Serial.println("Scan done");
 
@@ -292,7 +313,61 @@ void loop() {
   }
   sleep(1);
 
-  finger.LEDcontrol(FINGERPRINT_LED_ON, 0, FINGERPRINT_LED_RED);
+  timeClient.update(); // use to refresh LCD time
+
+  unsigned long unix_epoch = timeClient.getEpochTime();    // Get Unix epoch time from the NTP server
+
+  second_ = second(unix_epoch);
+  if (last_second != second_) {
+ 
+    minute_ = minute(unix_epoch);
+    hour_   = hour(unix_epoch);
+    day_    = day(unix_epoch);
+    month_  = month(unix_epoch);
+    year_   = year(unix_epoch);
+ 
+    Time[14] = second_ % 10 + 48;
+    Time[13] = second_ / 10 + 48;
+    Time[11]  = minute_ % 10 + 48;
+    Time[10]  = minute_ / 10 + 48;
+    Time[8]  = hour_   % 10 + 48;
+    Time[7]  = hour_   / 10 + 48;
+ 
+    Date[6]  = day_   / 10 + 48;
+    Date[7]  = day_   % 10 + 48;
+    Date[9]  = month_  / 10 + 48;
+    Date[10]  = month_  % 10 + 48;
+    Date[14] = (year_   / 10) % 10 + 48;
+    Date[15] = year_   % 10 % 10 + 48;
+ 
+    Serial.println(Time);
+    Serial.println(Date);
+ 
+    lcd.setCursor(0, 0);
+    lcd.print(Time);
+    lcd.setCursor(0, 1);
+    lcd.print(Date);
+    if (second_ == 0 || second_ == 10 || second_ == 20 || second_ == 30 || second_ == 40 || second_ == 50)
+    {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Bonjour !");
+        lcd.setCursor(0,1);
+        lcd.print("Bienvenue");
+        delay(1000);
+        lcd.clear(); 
+        lcd.setCursor(0, 0);
+        lcd.print("Scannez doigt,");
+        delay(1000);
+        lcd.setCursor(0,1);
+        lcd.print("pour badger.");
+        delay(1000);
+        lcd.clear();
+    }
+    last_second = second_;
+  }
+
+  finger.LEDcontrol(FINGERPRINT_LED_ON, 0, FINGERPRINT_LED_BLUE);
 
   Serial.println(" ");
   Serial.println(" ");
@@ -305,6 +380,12 @@ void loop() {
   Serial.println("Remove finger");
   if (matchFound) {
     Serial.println("Finger validated");
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Fingerprint OK !");
+    lcd.setCursor(0,1);
+    lcd.print("Bienvenue");
+    delay(1000);
     matchFound = false;
 
     StaticJsonDocument<256> doc;
@@ -322,6 +403,12 @@ void loop() {
     Serial.println("Empreinte envoyée");
     sleep(3);
   } else {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("ERROR !");
+    lcd.setCursor(0,1);
+    lcd.print("Try again");
+    delay(1000);
     // String newPairingCode = fingerManager.generateNewPairingCode();
     // Serial.println(newPairingCode);
     id = rand(); // Generate random ID
