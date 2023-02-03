@@ -1,5 +1,7 @@
 # UpWork
 
+![Group 6](https://user-images.githubusercontent.com/92107731/216580106-8868d6ee-ad57-4bcd-a55c-b629d2d95334.png)
+
 This project is a school project that aims to use an ESP32 board, a fingerprint sensor, and an LCD screen to track the time of arrival and departure of employees. The system works by capturing the employee's fingerprint and sending the data to an MQTT broker. The broker then receives and processes the data to update the employee's attendance records.
 
 ## Requirements
