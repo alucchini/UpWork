@@ -25,5 +25,12 @@ This project is a school project that aims to use an ESP32 board, a fingerprint 
  - https://github.com/cdudit/upwork-web
  - https://github.com/cdudit/upwork-web-mqtt
 
+## App iOS
+
+This project also includes a mobile application for iOS devices that connects to a web server on a Raspberry Pi. The application retrieves the attendance data of employees from the server and displays the worked hours. The web server on the Raspberry Pi communicates with the ESP32 board through the MQTT broker to receive the latest attendance data.
+
+The mobile application provides a convenient way for managers to monitor the attendance records of employees in real-time. The user-friendly interface allows for easy navigation and provides a clear overview of the attendance data.
+
+https://github.com/gatienddr/upwork
 
 
