@@ -20,5 +20,10 @@ This project is a school project that aims to use an ESP32 board, a fingerprint 
 
 ![Frame 43](https://user-images.githubusercontent.com/92107731/216539933-ebe31b1b-1e2b-46ee-9774-5ed7f074714b.png)
 
+## Repositories for MQTT Broker
+
+ - https://github.com/cdudit/upwork-web
+ - https://github.com/cdudit/upwork-web-mqtt
+
 
 
